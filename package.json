@@ -2,7 +2,7 @@
   "name": "visual-file-grouping",
   "displayName": "Visual File Grouping",
   "description": "Organize files in groups and reduce open tabs.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "owardlaw",
   "icon": "images/logo.png",
   "engines": {
