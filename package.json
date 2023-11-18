@@ -2,6 +2,10 @@
   "name": "visual-file-grouping",
   "displayName": "Visual File Grouping",
   "description": "Organize files in groups and reduce open tabs.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/owardlaw/visual-file-grouping"
+  },
   "version": "0.0.3",
   "publisher": "owardlaw",
   "icon": "images/logo.png",
