@@ -17,3 +17,8 @@ All notable changes to the "visual-file-grouping" extension will be documented i
 
 ### Added
 - Update readme.
+
+## [1.0.3] - 2023-11-17
+
+### Added
+- Added groups, and output of groups of files. Users can click on file from output. 
