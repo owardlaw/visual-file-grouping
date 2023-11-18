@@ -4,11 +4,11 @@ All notable changes to the "visual-file-grouping" extension will be documented i
 
 ## [Unreleased]
 
-## [1.1.1] - 2023-11-17
+## [0.0.1] - 2023-11-17
 
 ### Inital release. 
 
-## [1.1.1] - 2023-11-17
+## [0.0.2] - 2023-11-17
 
 ### Added
 - Added Logo 
