@@ -1,11 +1,14 @@
 import * as vscode from 'vscode';
 
+let outputChannel: vscode.OutputChannel;
+let markedFiles: { [group: string]: Set<string> } = {};
+let lastUsedGroup: string | null = null;
+
 class MarkedFilesDecorationProvider {
   private _onDidChangeFileDecorations: vscode.EventEmitter<vscode.Uri | vscode.Uri[]> = new vscode.EventEmitter<vscode.Uri | vscode.Uri[]>();
   public readonly onDidChangeFileDecorations: vscode.Event<vscode.Uri | vscode.Uri[]> = this._onDidChangeFileDecorations.event;
-  private markedFiles: Set<string> = new Set();
 
-  public toggleMark(fileUri?: vscode.Uri): void {
+  public async toggleMark(fileUri?: vscode.Uri): Promise<void> {
     const uriToMark = fileUri || vscode.window.activeTextEditor?.document.uri;
 
     if (!uriToMark) {
@@ -13,24 +16,80 @@ class MarkedFilesDecorationProvider {
       return;
     }
 
-    if (this.markedFiles.has(uriToMark.toString())) {
-      this.markedFiles.delete(uriToMark.toString());
+    const groupName = await this.getGroupName(uriToMark.toString());
+
+    if (!groupName) {
+      let inputGroupName: string | undefined;
+      if (lastUsedGroup === null) {
+        inputGroupName = await vscode.window.showInputBox({
+          prompt: 'Enter a group name',
+          placeHolder: 'Group Name'
+        });
+      } else {
+        inputGroupName = await vscode.window.showInputBox({
+          prompt: 'Enter a group name (leave blank for last used)',
+          placeHolder: 'Group Name',
+          value: lastUsedGroup
+        });
+      }
+
+      if (!inputGroupName) {
+        vscode.window.showErrorMessage('Group name is required for marking files.');
+        return;
+      }
+
+      const group = inputGroupName;
+
+      if (!markedFiles[group]) {
+        markedFiles[group] = new Set();
+      }
+
+      markedFiles[group].add(uriToMark.toString());
+      lastUsedGroup = group;
+      this._onDidChangeFileDecorations.fire(uriToMark);
+
+      // vscode.window.showInformationMessage(`Toggled mark for: ${uriToMark.fsPath} (Group: ${group})`);
     } else {
-      this.markedFiles.add(uriToMark.toString());
+      markedFiles[groupName].delete(uriToMark.toString());
+      this._onDidChangeFileDecorations.fire(uriToMark);
+
+      // vscode.window.showInformationMessage(`Unmarked: ${uriToMark.fsPath} (Group: ${groupName})`);
     }
 
-    this._onDidChangeFileDecorations.fire(uriToMark);
-    vscode.window.showInformationMessage(`Toggled mark for: ${uriToMark.fsPath}`);
+    outputChannel.clear();
+    for (const groupName in markedFiles) {
+      if (markedFiles[groupName].size > 0) {
+        outputChannel.appendLine(groupName);
+        markedFiles[groupName].forEach((file) => {
+          let filePath = file.replace('file://', '');
+          outputChannel.appendLine(`  |-${filePath}`);
+        });
+      }
+    }
+    outputChannel.show(true);
   }
 
   public provideFileDecoration(uri: vscode.Uri): vscode.ProviderResult<vscode.FileDecoration> {
-    if (this.markedFiles.has(uri.toString())) {
-      return {
-        badge: '⚑',
-        color: new vscode.ThemeColor('markedFileDecoration.background'),
-        tooltip: 'Marked File'
-      };
+    outputChannel = vscode.window.createOutputChannel('Marked Files');
+
+    for (const group in markedFiles) {
+      if (markedFiles[group].has(uri.toString())) {
+        return {
+          badge: '⚑',
+          color: new vscode.ThemeColor('markedFileDecoration.background'),
+          tooltip: `Marked File (Group: ${group})`
+        };
+      }
     }
+  }
+
+  private getGroupName(fileUri: string): string | undefined {
+    for (const group in markedFiles) {
+      if (markedFiles[group].has(fileUri)) {
+        return group;
+      }
+    }
+    return undefined;
   }
 }
 
@@ -43,5 +102,3 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(disposable);
 }
-
-export function deactivate() {}

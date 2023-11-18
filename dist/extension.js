@@ -1,1 +1,167 @@
-(()=>{"use strict";var e={112:function(e,t,i){var r=this&&this.__createBinding||(Object.create?function(e,t,i,r){void 0===r&&(r=i);var o=Object.getOwnPropertyDescriptor(t,i);o&&!("get"in o?!t.__esModule:o.writable||o.configurable)||(o={enumerable:!0,get:function(){return t[i]}}),Object.defineProperty(e,r,o)}:function(e,t,i,r){void 0===r&&(r=i),e[r]=t[i]}),o=this&&this.__setModuleDefault||(Object.create?function(e,t){Object.defineProperty(e,"default",{enumerable:!0,value:t})}:function(e,t){e.default=t}),n=this&&this.__importStar||function(e){if(e&&e.__esModule)return e;var t={};if(null!=e)for(var i in e)"default"!==i&&Object.prototype.hasOwnProperty.call(e,i)&&r(t,e,i);return o(t,e),t};Object.defineProperty(t,"__esModule",{value:!0}),t.deactivate=t.activate=void 0;const a=n(i(496));class s{_onDidChangeFileDecorations=new a.EventEmitter;onDidChangeFileDecorations=this._onDidChangeFileDecorations.event;markedFiles=new Set;toggleMark(e){const t=e||a.window.activeTextEditor?.document.uri;t?(this.markedFiles.has(t.toString())?this.markedFiles.delete(t.toString()):this.markedFiles.add(t.toString()),this._onDidChangeFileDecorations.fire(t),a.window.showInformationMessage(`Toggled mark for: ${t.fsPath}`)):a.window.showErrorMessage("No file selected.")}provideFileDecoration(e){if(this.markedFiles.has(e.toString()))return{badge:"⚑",color:new a.ThemeColor("markedFileDecoration.background"),tooltip:"Marked File"}}}t.activate=function(e){const t=new s;e.subscriptions.push(a.window.registerFileDecorationProvider(t));let i=a.commands.registerCommand("extension.markFile",(e=>{t.toggleMark(e)}));e.subscriptions.push(i)},t.deactivate=function(){}},496:e=>{e.exports=require("vscode")}},t={},i=function i(r){var o=t[r];if(void 0!==o)return o.exports;var n=t[r]={exports:{}};return e[r].call(n.exports,n,n.exports,i),n.exports}(112);module.exports=i})();
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	var __webpack_modules__ = ([
+/* 0 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.activate = void 0;
+const vscode = __importStar(__webpack_require__(1));
+let outputChannel;
+let markedFiles = {};
+let lastUsedGroup = null;
+class MarkedFilesDecorationProvider {
+    _onDidChangeFileDecorations = new vscode.EventEmitter();
+    onDidChangeFileDecorations = this._onDidChangeFileDecorations.event;
+    async toggleMark(fileUri) {
+        const uriToMark = fileUri || vscode.window.activeTextEditor?.document.uri;
+        if (!uriToMark) {
+            vscode.window.showErrorMessage('No file selected.');
+            return;
+        }
+        const groupName = await this.getGroupName(uriToMark.toString());
+        if (!groupName) {
+            let inputGroupName;
+            if (lastUsedGroup === null) {
+                inputGroupName = await vscode.window.showInputBox({
+                    prompt: 'Enter a group name',
+                    placeHolder: 'Group Name'
+                });
+            }
+            else {
+                inputGroupName = await vscode.window.showInputBox({
+                    prompt: 'Enter a group name (leave blank for last used)',
+                    placeHolder: 'Group Name',
+                    value: lastUsedGroup
+                });
+            }
+            if (!inputGroupName) {
+                vscode.window.showErrorMessage('Group name is required for marking files.');
+                return;
+            }
+            const group = inputGroupName;
+            if (!markedFiles[group]) {
+                markedFiles[group] = new Set();
+            }
+            markedFiles[group].add(uriToMark.toString());
+            lastUsedGroup = group;
+            this._onDidChangeFileDecorations.fire(uriToMark);
+            // vscode.window.showInformationMessage(`Toggled mark for: ${uriToMark.fsPath} (Group: ${group})`);
+        }
+        else {
+            markedFiles[groupName].delete(uriToMark.toString());
+            this._onDidChangeFileDecorations.fire(uriToMark);
+            // vscode.window.showInformationMessage(`Unmarked: ${uriToMark.fsPath} (Group: ${groupName})`);
+        }
+        outputChannel.clear();
+        for (const groupName in markedFiles) {
+            if (markedFiles[groupName].size > 0) {
+                outputChannel.appendLine(groupName);
+                markedFiles[groupName].forEach((file) => {
+                    let filePath = file.replace('file://', '');
+                    outputChannel.appendLine(`  |-${filePath}`);
+                });
+            }
+        }
+        outputChannel.show(true);
+    }
+    provideFileDecoration(uri) {
+        outputChannel = vscode.window.createOutputChannel('Marked Files');
+        for (const group in markedFiles) {
+            if (markedFiles[group].has(uri.toString())) {
+                return {
+                    badge: '⚑',
+                    color: new vscode.ThemeColor('markedFileDecoration.background'),
+                    tooltip: `Marked File (Group: ${group})`
+                };
+            }
+        }
+    }
+    getGroupName(fileUri) {
+        for (const group in markedFiles) {
+            if (markedFiles[group].has(fileUri)) {
+                return group;
+            }
+        }
+        return undefined;
+    }
+}
+function activate(context) {
+    const decorationProvider = new MarkedFilesDecorationProvider();
+    context.subscriptions.push(vscode.window.registerFileDecorationProvider(decorationProvider));
+    let disposable = vscode.commands.registerCommand('extension.markFile', (fileUri) => {
+        decorationProvider.toggleMark(fileUri);
+    });
+    context.subscriptions.push(disposable);
+}
+exports.activate = activate;
+
+
+/***/ }),
+/* 1 */
+/***/ ((module) => {
+
+module.exports = require("vscode");
+
+/***/ })
+/******/ 	]);
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __webpack_require__(0);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
+/******/ })()
+;
+//# sourceMappingURL=extension.js.map
