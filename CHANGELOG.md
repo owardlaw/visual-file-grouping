@@ -12,3 +12,8 @@ All notable changes to the "visual-file-grouping" extension will be documented i
 
 ### Added
 - Added Logo 
+
+## [0.0.3] - 2023-11-17
+
+### Added
+- Update readme.
