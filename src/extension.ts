@@ -8,6 +8,18 @@ class MarkedFilesDecorationProvider {
   private _onDidChangeFileDecorations: vscode.EventEmitter<vscode.Uri | vscode.Uri[]> = new vscode.EventEmitter<vscode.Uri | vscode.Uri[]>();
   public readonly onDidChangeFileDecorations: vscode.Event<vscode.Uri | vscode.Uri[]> = this._onDidChangeFileDecorations.event;
 
+  public checkFiles(markedFiles: { [group: string]: Set<string> }) {
+    for (const groupName in markedFiles) {
+      if (markedFiles[groupName].size > 0) {
+        outputChannel.appendLine(groupName);
+        markedFiles[groupName].forEach((file: string) => {
+          let filePath = file.replace('file://', '');
+          outputChannel.appendLine(`  |-${filePath}`);
+        });
+      }
+    }
+  }
+  
   public async toggleMark(fileUri?: vscode.Uri): Promise<void> {
     const uriToMark = fileUri || vscode.window.activeTextEditor?.document.uri;
 
@@ -34,11 +46,10 @@ class MarkedFilesDecorationProvider {
       }
 
       if (!inputGroupName) {
-        vscode.window.showErrorMessage('Group name is required for marking files.');
-        return;
+        vscode.window.showErrorMessage('No group name provied, "Group" will be used.');
       }
 
-      const group = inputGroupName;
+      let group = inputGroupName ? inputGroupName : "Group" ;
 
       if (!markedFiles[group]) {
         markedFiles[group] = new Set();
@@ -57,20 +68,14 @@ class MarkedFilesDecorationProvider {
     }
 
     outputChannel.clear();
-    for (const groupName in markedFiles) {
-      if (markedFiles[groupName].size > 0) {
-        outputChannel.appendLine(groupName);
-        markedFiles[groupName].forEach((file) => {
-          let filePath = file.replace('file://', '');
-          outputChannel.appendLine(`  |-${filePath}`);
-        });
-      }
-    }
+
+    // Updates changes to marked files 
+    this.checkFiles(markedFiles);
+   
     outputChannel.show(true);
   }
 
   public provideFileDecoration(uri: vscode.Uri): vscode.ProviderResult<vscode.FileDecoration> {
-    outputChannel = vscode.window.createOutputChannel('Marked Files');
 
     for (const group in markedFiles) {
       if (markedFiles[group].has(uri.toString())) {
@@ -94,6 +99,8 @@ class MarkedFilesDecorationProvider {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  outputChannel = vscode.window.createOutputChannel('Marked Files'); 
+
   const decorationProvider = new MarkedFilesDecorationProvider();
   context.subscriptions.push(vscode.window.registerFileDecorationProvider(decorationProvider));
   let disposable = vscode.commands.registerCommand('extension.markFile', (fileUri?: vscode.Uri) => {
