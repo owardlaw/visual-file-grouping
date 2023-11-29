@@ -6,7 +6,7 @@
     "type": "git",
     "url": "https://github.com/owardlaw/visual-file-grouping"
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "owardlaw",
   "icon": "images/logo.png",
   "engines": {
@@ -24,6 +24,10 @@
       {
         "command": "extension.markFile",
         "title": "Mark"
+      },
+      {
+        "command": "extension.clearTerminalMarks",
+        "title": "Clear Marks"
       }
     ],
     "keybindings": [
@@ -31,6 +35,12 @@
         "command": "extension.markFile",
         "key": "ctrl+k",
         "mac": "cmd+k",
+        "when": "explorerViewletVisible && !inputFocus"
+      },
+      {
+        "command": "extension.clearTerminalMarks",
+        "key": "ctrl+option+k",
+        "mac": "cmd+alt+k",
         "when": "explorerViewletVisible && !inputFocus"
       }
     ],
@@ -50,9 +60,13 @@
         {
           "command": "extension.markFile",
           "group": "navigation"
+        },
+        {
+          "command": "extension.clearTerminalMarks",
+          "group": "navigation"
         }
       ]
-    }    
+    }
   },
   "scripts": {
     "vscode:prepublish": "yarn run package",
