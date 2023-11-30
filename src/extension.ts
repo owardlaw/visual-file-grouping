@@ -48,6 +48,10 @@ class MarkedFilesDecorationProvider {
           value: lastUsedGroup,
         });
       }
+      
+      if (inputGroupName === undefined) {
+        return;
+      }
 
       let lineNum = await vscode.window.showInputBox({
         prompt: "Ender a line number (leave blank if not needed)",
@@ -76,20 +80,13 @@ class MarkedFilesDecorationProvider {
       markedFiles[group].add(uriToMark.toString() + lineNum);
       lastUsedGroup = group;
       this._onDidChangeFileDecorations.fire(uriToMark);
-
-      // vscode.window.showInformationMessage(`Toggled mark for: ${uriToMark.fsPath} (Group: ${group})`);
     } else {
       markedFiles[groupName].delete(uriToMark.toString());
       this._onDidChangeFileDecorations.fire(uriToMark);
-
-      // vscode.window.showInformationMessage(`Unmarked: ${uriToMark.fsPath} (Group: ${groupName})`);
     }
 
     outputChannel.clear();
-
-    // Updates changes to marked files
     this.checkFiles(markedFiles);
-
     outputChannel.show(true);
   }
 

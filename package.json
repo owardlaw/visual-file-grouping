@@ -27,7 +27,7 @@
       },
       {
         "command": "extension.clearTerminalMarks",
-        "title": "Clear Marks"
+        "title": "Unmark All"
       }
     ],
     "keybindings": [
